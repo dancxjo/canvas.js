@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html style="margin:0">
+	<body style="margin:0">				
+		<canvas id="myCanvas" height="600" width="800" style="position: absolute; height: 100%; width:100%">
+		Your browser does not support the HTML5 canvas tag.
+		</canvas>
+		
+		<div id="info" style="color: white; position: absolute">Travis&rsquo;s Bugfield Simulation</div>
+					
+		<script>
+			function announce(s) {
+				document.getElementById('info').innerHTML = s;
+			}
+			
+			function Point(x, y) {
+				this.x = x;
+				this.y = y;
+			}
+			
+			Point.prototype = {
+				add: function (p) {
+					this.x += p.x;
+					this.y += p.y;
+				}
+			}
+			
+			function Color(r, g, b) {
+				this.red = r;
+				this.green = g;
+				this.blue = b;
+			}
+			
+			Color.prototype = {
+				toString: function () {
+					return "rgb(" + Math.floor(this.red) + ", " + Math.floor(this.green) + ", " + Math.floor(this.blue) + ")";
+				},
+				equals: function (other) {
+					return other.red == this.red && other.green == this.green && other.blue == this.blue;
+				},
+				isSimilarTo: function (other) {
+					return 255 <= Math.abs(other.red - this.red) + Math.abs(other.green - this.green) + Math.abs(other.blue - this.blue);
+				},
+			}
+			
+			function Bug(canvas, x, y) {
+				this.message = "";
+				this.location = new Point(x | Math.random() * canvas.width, y | Math.random() * canvas.height);
+				this.velocity = new Point(Math.random() * 2 - 1, Math.random() * 2 - 1);
+				this.color = new Color(Math.random() * 255, Math.random() * 255, Math.random() * 255);
+				this.canvas = canvas;								
+				this.energy = 1000;
+				
+				this.isFood = function (other) {
+					return !other.color.isSimilarTo(this.color);
+				}
+				
+				this.flee = function () {
+					this.message = "Fleeing!";
+					this.velocity.x *= -1;
+					this.velocity.y *= -1;
+				}
+				
+				this.counter = function () {
+					if (this.energy > 20) {
+						this.resist();
+					} else {
+						this.flee();
+					}
+				}
+				
+				this.resist = function () {
+					this.message = "Resisting!";
+					this.energy -= 0.1;					
+				}
+				
+				this.attack = function (others, i) {					
+					this.message = "Attacking!";
+					var other = others[i];					
+					other.counter();
+					if (!other.isAlive()) {
+						delete others[i];
+						this.energy += 50;
+					}
+				}
+				
+				this.mate = function (others, i) {
+					var other = others[i];
+					var baby = new Bug(this.canvas, this.location.x, this.location.y);
+					
+					others.push(baby);
+				}
+			}
+			
+			Bug.prototype = {							
+				isAlive: function () {
+					return this.energy > 0;
+				},
+									
+				draw: function () {										
+					if (this.isAlive()) {
+						var ctx = this.canvas.getContext("2d");
+						ctx.fillStyle = this.color.toString();
+						ctx.beginPath();
+						ctx.arc(this.location.x, this.location.y,	1, 0, 2 * Math.PI, false);
+						ctx.fill();
+						ctx.font="8px Arial";
+						ctx.fillText(this.message,this.location.x,this.location.y);
+					}
+				},				
+				
+				regard: function (others) {
+					var where = new Point(this.location.x + this.velocity.x, this.location.y + this.velocity.y);
+					
+					// Avoid walls by turning around
+					if (where.x < 0 || where.x > this.canvas.width) {
+						this.velocity.x *= -1;
+						//this.regard(others);
+					}
+					
+					if (where.y < 0 || where.y > this.canvas.height) {
+						this.velocity.y *= -1;
+						//this.regard(others);
+					}
+					
+					for (var i in others) {
+						var other = others[i];
+						if (other != this) {
+							var a = where.x - other.location.x;
+							var b = where.y - other.location.y;
+							var distance = Math.sqrt(a * a + b * b);
+							if (distance < 10) {
+								if (this.isFood(other)) {
+									this.attack(others, i);
+								} else {
+									//this.mate(others, i);
+								}
+							}
+						}
+					}
+				},												
+								
+				step: function () {					
+					this.location.add(this.velocity);					
+					this.energy -= Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
+				}
+			}
+			
+			var c = document.getElementById("myCanvas");			
+			var bugs = [];
+			for (var i = 0; i < 100; i++) {
+				bugs.push(new Bug(c, Math.random() * c.width, Math.random() * c.height));
+			}
+			
+			draw();
+			
+			function draw() {				
+				requestAnimationFrame(draw);
+				var c = document.getElementById("myCanvas");
+				var ctx = c.getContext("2d");
+				ctx.fillStyle = "#000";
+				ctx.fillRect(0, 0, c.width, c.height);
+				for (var i in bugs) {
+					var bug = bugs[i];
+					bug.regard(bugs);
+					bug.step();
+					bug.draw();
+				}				
+			}
+		</script> 
+	
+	</body>
+</html>
