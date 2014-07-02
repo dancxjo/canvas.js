@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html style="margin:0">
+	<body style="margin:0">				
+		<canvas id="myCanvas" height="600" width="800" style="position: absolute; height: 100%; width:100%">
+		Your browser does not support the HTML5 canvas tag.
+		</canvas>
+		
+		<div id="info" style="color: white; position: absolute">Travis&rsquo;s Starfield Simulation</div>
+					
+		<script>
+			function announce(s) {
+				document.getElementById('info').innerHTML = s;
+			}
+			
+			var center = {x: 0, y: 0};
+			
+			function Star(canvas) {
+				this.angle = Math.random() * 360;
+				this.radius = Math.random() * 20 + 1;
+				this.canvas = canvas;
+				this.intensity = Math.random() * 3;
+				this.calculate();
+			}
+			
+			Star.prototype = {
+				calculate: function () {
+					this.x = center.x + this.radius * Math.cos(this.angle * Math.PI / 180);
+					this.y = center.y + this.radius * Math.sin(this.angle * Math.PI / 180);
+					this.live = this.x >= 0 && this.y >= 0 && this.x <= this.canvas.width && this.y <= this.canvas.height;
+				},
+				draw: function () {										
+					var ctx = this.canvas.getContext("2d");
+					var i = Math.floor(255 * (this.radius * this.intensity / 255));					
+					ctx.fillStyle = "rgb(" + i + ", " + i + ", " + i + ")";
+					ctx.beginPath();
+					ctx.arc(this.x, this.y,	1, 0, 2 * Math.PI, false);
+					ctx.fill();
+				},				
+				step: function () {					
+					this.radius *= 1.01;
+					this.calculate();					
+					if (!this.live) {						
+						this.angle = Math.random() * 360;
+						this.radius = Math.random() * 20 + 1;
+						this.calculate();						
+					}					
+				}
+			}
+			
+			var c = document.getElementById("myCanvas");
+			center.x = c.width / 2;
+			center.y = c.height / 2;
+			var stars = [];
+			for (var i = 0; i < 200; i++) {
+				stars.push(new Star(c));
+			}
+			
+			draw();
+			
+			function draw() {				
+				requestAnimationFrame(draw);
+				var c = document.getElementById("myCanvas");
+				var ctx = c.getContext("2d");
+				ctx.fillStyle = "#000";
+				ctx.fillRect(0, 0, c.width, c.height);
+				for (var i in stars) {
+					var star = stars[i];
+					star.step();
+					star.draw();
+				}				
+			}
+		</script> 
+	
+	</body>
+</html>
