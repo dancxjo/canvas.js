@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html style="margin:0">
+	<body style="margin:0">				
+		<canvas id="myCanvas" height="600" width="800" style="position: absolute; height: 100%; width:100%">
+		Your browser does not support the HTML5 canvas tag.
+		</canvas>
+		
+		<div id="info" style="color: white; position: absolute">Travis&rsquo;s Ballfield Simulation</div>
+					
+		<script>
+			var G = 0.0000000001;
+			function announce(s) {
+				document.getElementById('info').innerHTML = s;
+			}
+			var sun = {mass: 1000000};
+			var center = {x: 0, y: 0};
+			
+			function Ball(canvas) {
+				this.x = Math.random() * canvas.width;
+				this.y = Math.random() * canvas.height;					
+				this.vx = Math.random() * 3 - 2;
+				this.vy = Math.random() * 3 - 2;
+				this.mass = Math.random() * sun.mass + 1;
+				this.radius = 20;
+				this.canvas = canvas;
+				this.color = {red: Math.random() * 255, green: Math.random() * 255, blue: Math.random() * 255};				
+			}
+			
+			Ball.prototype = {				
+				draw: function () {										
+					var ctx = this.canvas.getContext("2d");					
+					ctx.fillStyle = "rgb(" + Math.floor(this.color.red) + ", " + Math.floor(this.color.green) + ", " + Math.floor(this.color.blue) + ")";
+					ctx.beginPath();
+					ctx.arc(this.x, this.y,	this.radius, 0, 2 * Math.PI, false);
+					ctx.fill();
+				},				
+				step: function () {					
+					this.x += this.vx;
+					this.y += this.vy;
+							
+					if (this.x - this.radius < 0) {
+						this.vx = Math.abs(this.vx);						
+					}
+					
+					if (this.x + this.radius > this.canvas.width) {
+						this.vx = -Math.abs(this.vx);						
+					}						
+					
+					if (this.y - this.radius < 0) {
+						this.vy = Math.abs(this.vy);						
+					}
+					
+					if (this.y + this.radius > this.canvas.height) {
+						this.vy = -Math.abs(this.vy);						
+					}						
+					
+					if (this != sun) for (var i in Balls) {
+						var that = Balls[i];
+						if (that != this) {
+							var dx = this.x - that.x;
+							var dy = this.y - that.y;														
+							
+							var fx = (G * this.mass * that.mass) / (dx*dx);
+							var fy = (G * this.mass * that.mass) / (dy*dy);														
+							
+							announce(fx + "&times;"+fy);
+							
+							this.vx += fx * (this.x < that.x?-1:1);
+							this.vy += fy * (this.y < that.y?-1:1);
+						}
+					}
+				}
+			}
+			
+			var c = document.getElementById("myCanvas");
+			center.x = c.width / 2;
+			center.y = c.height / 2;
+			var Balls = [];
+			sun = new Ball(c);
+			sun.x = c.width / 2;
+			sun.y = c.height / 2;
+			sun.vx = sun.vy = 0;
+			Balls.push(sun);
+			for (var i = 0; i < 10; i++) {
+				Balls.push(new Ball(c));
+			}
+			
+			draw();
+			
+			function draw() {				
+				requestAnimationFrame(draw);
+				var c = document.getElementById("myCanvas");
+				var ctx = c.getContext("2d");
+				ctx.fillStyle = "#000";
+				ctx.fillRect(0, 0, c.width, c.height);
+				for (var i in Balls) {
+					var Ball = Balls[i];
+					Ball.step();
+					Ball.draw();
+				}				
+			}
+		</script> 
+	
+	</body>
+</html>
