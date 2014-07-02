@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html style="margin:0">
+	<head>
+		<meta charset="utf-8"/>
+	</head>
+	<body style="margin:0">
+		<div id="info"></div>
+		<canvas id="myCanvas" width="320" height="240">
+			 style="position:absolute;height:100%;width:100%"
+		Your browser does not support the HTML5 canvas tag.
+		</canvas>
+					
+		<script>
+		function drawDotAt(ctx, x, y, r, offsetAngle, offsetRadius) {						
+			
+			ctx.fillStyle = "#000000";
+			ctx.beginPath();
+			ctx.arc(x - offsetRadius * Math.cos(offsetAngle*Math.PI/180), y  - offsetRadius * Math.sin(offsetAngle*Math.PI/180), r, 0, 2 * Math.PI, false);			
+			ctx.fill();
+			
+			ctx.fillStyle = "#FFFFFF";
+			ctx.beginPath();
+			ctx.arc(x + offsetRadius * Math.cos(offsetAngle*Math.PI/180), y  + offsetRadius * Math.sin(offsetAngle*Math.PI/180), r, 0, 2 * Math.PI, false);			
+			ctx.fill();
+			
+			ctx.fillStyle = "#0000FF";
+			ctx.beginPath();
+			ctx.arc(x, y, r, 0, 2 * Math.PI, false);			
+			ctx.fill();
+		}
+		
+		var ox = 0;
+		var oy = 0;
+		
+		function doAverage(c, d, x, y) {
+			var r = 2;
+			var s = 0;
+			for (var color = 0; color < 3; color++) {
+				for (var i = Math.floor(-(r/2)); i <= Math.floor(r/2); i++) {
+					for (var j = Math.floor(-(r/2)); j <= Math.floor(r/2); j++) {
+						var k = 0; 						
+						if (x + i < 0 || y + j < 0 || x + i >= c.width || y + j >= c.height) {
+							k = 0;
+						} else {							
+							s++;
+						}
+						if (i == 0 == j) {
+							k = 1;
+						} else {
+							k = (Math.sqrt(i * i + j * j));
+						}
+						console.log("k(" + i + ", " + j + ") = " + k);
+						d[(y*c.width+x)*4+color] += d[((y+j)*c.width+(x+i))*4+color] * k;
+					}
+				}
+				d[(y*c.width+x)*4+color] /= s;
+				//d[(y*c.width+x)*4+color] = 0x00;
+			}
+		}
+		
+		function gblur(c) {			
+			var ctx = c.getContext("2d");
+			var id = ctx.getImageData(0, 0, c.width, c.height);
+			var d  = id.data;			
+			for (var x = 10; x < c.width; x++) {
+				for (var y = 10; y < c.height; y++) {
+					doAverage(c, d, x, y);															
+					//d[(y*c.width+x)*4] = d[(y*c.width+x)*4];
+				}
+			}
+			ctx.putImageData(id, 0, 0);					
+		}
+			
+		function paint() {
+			requestAnimationFrame(paint);
+			var c = document.getElementById("myCanvas");
+			var ctx = c.getContext("2d");
+			ctx.fillStyle = "#8000b3";
+			ctx.fillRect(0,0,c.width,c.height);
+			var xStep = c.width / 10;
+			var yStep = c.height / 10;		
+			var r = 0;
+			ox += 0.1;			
+			if (ox > 360) ox = 0;
+			//document.getElementById("info").innerHTML = ox;
+			
+			//console.log(ox++);
+			//console.log(oy++);
+			for (var y = 0; y <= c.height; y += yStep) {	
+				r = y;//r += oy;//y + Math.random()*(oy);
+				for (var x = 0; x <= c.width; x += yStep) {
+					r += ox;//Math.random()*(ox);	
+					//if (r > 360) r = 0;
+					drawDotAt(ctx, x, y, yStep / 3, r, yStep / 15);
+				}
+			}
+			//gblur(c);
+		}
+		paint();
+		//setInterval(paint, 10);
+		//paint();
+		</script> 
+	
+	</body>
+</html>
